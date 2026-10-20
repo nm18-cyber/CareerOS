@@ -1,0 +1,54 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import {pathToFileURL} from 'node:url';
+import ts from 'typescript';
+import {DatabaseSync} from 'node:sqlite';
+const root=process.cwd(),out=path.join(root,'.sites-runtime/regression');fs.mkdirSync(out,{recursive:true});
+const db=new DatabaseSync(':memory:');db.exec('PRAGMA foreign_keys=ON');
+for(const filename of fs.readdirSync('drizzle').filter(n=>n.endsWith('.sql')).sort())db.exec(fs.readFileSync(path.join('drizzle',filename),'utf8'));
+function prepare(sql,values=[]){return {bind(...args){return prepare(sql,args)},async first(){return db.prepare(sql).get(...values)||null},async all(){return {results:db.prepare(sql).all(...values)}},async run(){const r=db.prepare(sql).run(...values);return {meta:{changes:Number(r.changes)}}}}}
+const D1={prepare,async batch(statements){db.exec('BEGIN');try{const result=[];for(const s of statements)result.push(await s.run());db.exec('COMMIT');return result}catch(e){db.exec('ROLLBACK');throw e}}};
+globalThis.__careerTest={env:{DB:D1},user:{userId:'test-user-a',email:'a@example.com'}};
+fs.writeFileSync(path.join(out,'env.mjs'),'export const env=globalThis.__careerTest.env;');fs.writeFileSync(path.join(out,'access.mjs'),'export async function currentUser(){return globalThis.__careerTest.user}');fs.writeFileSync(path.join(out,'profile.mjs'),'export async function markTask(){}');
+const built=new Map();function compile(file){file=path.resolve(file);if(built.has(file))return built.get(file);const target=path.join(out,path.relative(root,file).replace(/\.tsx?$/,'.mjs'));built.set(file,target);fs.mkdirSync(path.dirname(target),{recursive:true});let js=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext,jsx:ts.JsxEmit.ReactJSX}}).outputText;js=js.replace(/from ["']([^"']+)["']/g,(whole,spec)=>{if(spec==='cloudflare:workers')return `from '${pathToFileURL(path.join(out,'env.mjs'))}'`;if(spec.startsWith('.')){const abs=path.resolve(path.dirname(file),spec);if(abs===path.join(root,'lib/access'))return `from '${pathToFileURL(path.join(out,'access.mjs'))}'`;if(abs===path.join(root,'lib/profile'))return `from '${pathToFileURL(path.join(out,'profile.mjs'))}'`;const found=[abs,abs+'.ts',abs+'.tsx'].find(p=>fs.existsSync(p)&&fs.statSync(p).isFile());if(found)return `from '${pathToFileURL(compile(found))}'`;}return whole});fs.writeFileSync(target,js);return target;}
+const load=async p=>import(pathToFileURL(compile(p)).href);
+const net=await load('app/api/network/[collection]/route.ts'),jobs=await load('app/api/jobs/route.ts'),apps=await load('app/api/applications/route.ts'),resumes=await load('app/api/resumes/route.ts'),history=await load('app/api/resumes/history/route.ts');
+const {demoConfig}=await load('lib/resume-model.ts');const {importResumeText}=await load('lib/resume-import.ts');
+for(const [id,email] of [['test-user-a','a@example.com'],['test-user-b','b@example.com']])db.prepare('INSERT INTO users (id,email) VALUES (?,?)').run(id,email);
+function req(url,data,method='POST'){return new Request('https://career.test'+url,{method,headers:{'Content-Type':'application/json'},...(data===undefined?{}:{body:JSON.stringify(data)})});}
+async function good(response){assert(response.ok,await response.clone().text());return response.json();}
+assert.equal((await net.POST(req('/api/network/companies',{name:''}))).status,400);
+assert.equal((await net.POST(req('/api/network/companies',{name:'Bad URL',website:'javascript:alert(1)'}))).status,400);
+const company=await good(await net.POST(req('/api/network/companies',{name:'Example Company'})));
+const contact=await good(await net.POST(req('/api/network/contacts',{name:'Example Recruiter',company_id:company.id,follow_up:'2026-10-20'})));
+assert.equal((await net.POST(req('/api/network/contacts',{name:'Invalid date',follow_up:'2026-02-31'}))).status,400);
+const job=await good(await jobs.POST(req('/api/jobs',{title:'Designer',company:'Example Company'})));
+const config=demoConfig();const doc=await good(await resumes.POST(req('/api/resumes',{title:'Original',templateConfigJson:JSON.stringify(config),bullets:['Led a team of 6']})));
+const payload={id:job.id,title:'Designer',company:'Example Company',status:'Applied',company_id:company.id,contact_id:contact.id,resume_id:doc.id,job_description:'Design and lead a team',follow_up:'2026-10-20'};
+await good(await apps.POST(req('/api/applications',payload)));
+await good(await apps.POST(req('/api/applications',{id:job.id,action:'snapshot'})));
+const snapshotBefore=db.prepare('SELECT submitted_json FROM application_workspace WHERE job_id=?').get(job.id).submitted_json;
+await good(await resumes.PATCH(req('/api/resumes',{id:doc.id,title:'Updated',templateConfigJson:JSON.stringify({...config,name:'Updated Name'})},'PATCH')));
+assert.equal(db.prepare('SELECT submitted_json FROM application_workspace WHERE job_id=?').get(job.id).submitted_json,snapshotBefore);
+const versions=await good(await history.GET(req('/api/resumes/history?id='+doc.id,undefined,'GET')));assert.equal(versions.versions.length,1);
+await good(await history.POST(req('/api/resumes/history',{id:doc.id,action:'restore',versionId:versions.versions[0].id})));
+assert.equal(db.prepare('SELECT title FROM resumes WHERE id=?').get(doc.id).title,'Original');assert.equal(db.prepare('SELECT COUNT(*) AS n FROM resume_versions WHERE resume_id=?').get(doc.id).n,2);
+const tailored=await good(await apps.POST(req('/api/applications',{id:job.id,action:'tailor',resume_id:doc.id})));assert.notEqual(tailored.id,doc.id);assert.equal(db.prepare('SELECT title FROM resumes WHERE id=?').get(doc.id).title,'Original');assert.equal(db.prepare('SELECT job_description FROM resumes WHERE id=?').get(tailored.id).job_description,'Design and lead a team');
+await good(await jobs.PATCH(req('/api/jobs',{id:job.id,notes:'New note'},'PATCH')));assert.equal(db.prepare('SELECT status FROM job_applications WHERE id=?').get(job.id).status,'Applied');
+globalThis.__careerTest.user={userId:'test-user-b',email:'b@example.com'};
+assert.equal((await apps.GET(req('/api/applications?id='+job.id,undefined,'GET'))).status,404);
+assert.equal((await history.GET(req('/api/resumes/history?id='+doc.id,undefined,'GET'))).status,404);
+assert.equal((await net.DELETE(req('/api/network/companies?id='+company.id,undefined,'DELETE'))).status,404);
+assert.equal((await net.POST(req('/api/network/contacts',{name:'Cross-account',company_id:company.id}))).status,400);
+const ownJob=await good(await jobs.POST(req('/api/jobs',{title:'Own job'})));
+assert.equal((await apps.POST(req('/api/applications',{...payload,id:ownJob.id}))).status,400);
+globalThis.__careerTest.user={userId:'test-user-a',email:'a@example.com'};
+await good(await net.DELETE(req('/api/network/companies?id='+company.id,undefined,'DELETE')));
+assert.equal(db.prepare('SELECT company_id FROM contacts WHERE id=?').get(contact.id).company_id,null);
+assert.equal(db.prepare('SELECT company_id FROM application_workspace WHERE job_id=?').get(job.id).company_id,null);
+await good(await resumes.DELETE(req('/api/resumes?id='+tailored.id,undefined,'DELETE')));assert.equal(db.prepare('SELECT resume_id FROM application_workspace WHERE job_id=?').get(job.id).resume_id,null);assert.equal(db.prepare('SELECT submitted_json FROM application_workspace WHERE job_id=?').get(job.id).submitted_json,snapshotBefore);
+await good(await jobs.DELETE(req('/api/jobs?id='+job.id,undefined,'DELETE')));assert.equal(db.prepare('SELECT count(*) AS n FROM application_workspace WHERE job_id=?').get(job.id).n,0);
+const imported=importResumeText('Alex Morgan\nalex@example.com\nSummary\nExperienced creative director.\nWork Experience\nDesigner at Example\nDelivered 12 campaigns.\nEducation\nDesign degree\nSkills\nFigma, Photoshop');assert.equal(imported.name,'Alex Morgan');assert.equal(imported.email,'alex@example.com');assert(imported.sections['Work Experience'][0].body.includes('12 campaigns'));assert(imported.sections.Skills[0].body.includes('Figma'));
+assert.equal(db.prepare('PRAGMA foreign_key_check').all().length,0);
+console.log('PASS: schema migrations, input validation, company/contact linking, application save, immutable submitted copy, tailored copy, version backup/restore, account isolation, null-on-delete/cascade behavior, import mapping.');

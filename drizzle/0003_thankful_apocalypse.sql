@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `resume_match_scores_resume_unique` ON `resume_match_scores` (`resume_id`);

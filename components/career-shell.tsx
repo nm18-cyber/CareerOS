@@ -1,0 +1,3 @@
+import {ProductSidebar} from './workspace-sidebar';
+import type {ReactNode} from 'react';
+export function CareerShell({name,active,title,description,actions,children}:{name:string;active:string;title:string;description:string;actions?:ReactNode;children:ReactNode}){return <main className="ws-shell"><ProductSidebar name={name} active={active}/><section className="ws-main"><header className="ws-top"><a href="/tools">CareerOS / Workspace</a><a href="/settings">{name}</a></header><div className="ws-content"><header className="ws-heading"><div><span className="eyebrow">YOUR NEXT CHAPTER</span><h1>{title}</h1><p>{description}</p></div><div className="ws-actions">{actions}</div></header>{children}</div></section></main>}

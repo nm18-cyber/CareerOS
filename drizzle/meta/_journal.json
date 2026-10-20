@@ -1,0 +1,48 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1792406089951,
+      "tag": "0000_low_freak",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1792407073586,
+      "tag": "0001_far_leper_queen",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1792408260394,
+      "tag": "0002_goofy_shadowcat",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1792408299948,
+      "tag": "0003_thankful_apocalypse",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1792431637272,
+      "tag": "0004_square_liz_osborn",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1792480636838,
+      "tag": "0005_naive_bulldozer",
+      "breakpoints": true
+    }
+  ]
+}
