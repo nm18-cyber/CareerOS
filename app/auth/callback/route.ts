@@ -26,7 +26,11 @@ export async function GET(request: Request) {
       : { error: new Error("Missing code") };
 
   if (error) {
-    return authRedirect(request, "/login", { error: "link" });
+    // Google / LinkedIn send ?error=... when the user cancels or the provider refuses.
+    return authRedirect(request, "/login", {
+      error: params.has("error") ? "oauth" : "link",
+      return_to: returnTo,
+    });
   }
 
   return authRedirect(request, returnTo);
