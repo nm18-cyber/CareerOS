@@ -1,0 +1,123 @@
+/*
+ * CareerOS design tokens — "Modern Intelligence".
+ * Every colour, size and radius in the product should come from here.
+ * Documented in DESIGN.md. Contrast ratios are measured against #FFFFFF unless noted.
+ */
+:root {
+  /* ── Colour: core palette ───────────────────────────── */
+  --color-bg: #ffffff;               /* primary working canvas */
+  --color-bg-warm: #f7f5ef;          /* editorial bands, secondary workspaces */
+  --color-bg-muted: #f8f9fb;         /* app background behind white cards */
+  --color-text: #17233b;             /* navy — headings, labels, data (15.7:1) */
+  --color-text-muted: #667085;       /* supporting copy (4.97:1, 4.56:1 on warm) */
+  --color-accent: #4169e1;           /* actions, links, focus, highlights (4.85:1) */
+  --color-accent-hover: #3457c7;     /* hover (6.3:1) */
+  --color-accent-strong: #2f4db0;    /* pressed; text on pale blue (5.96:1 on soft) */
+  --color-accent-soft: #dce6fa;      /* selected cards, supporting emphasis */
+  --color-accent-faint: #eef3fd;     /* hover wash on rows and nav items */
+  --color-border: #d9dee7;           /* decorative separators and card edges */
+  --color-border-strong: #8a94a6;    /* form-field boundaries (3.06:1, WCAG 1.4.11) */
+  --color-navy-soft: #c7d3f5;        /* secondary text on navy (10.5:1) */
+
+  /* ── Colour: semantic ───────────────────────────────── */
+  --color-success: #237a57;          /* 5.26:1 */
+  --color-success-soft: #e7f3ec;
+  --color-success-strong: #1d6648;   /* text on success-soft (6.05:1) */
+  --color-warning: #a86416;          /* 4.67:1 */
+  --color-warning-soft: #fbf1e3;
+  --color-warning-strong: #8a5212;   /* text on warning-soft (5.7:1) */
+  --color-error: #b42318;            /* 6.57:1 */
+  --color-error-soft: #fcebe9;
+  --color-error-strong: #9a1e14;     /* text on error-soft (7.08:1) */
+
+  /* ── Typography ─────────────────────────────────────── */
+  --font-heading: "Manrope", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-editorial: "DM Serif Display", Georgia, serif;   /* sparing accent only */
+
+  --text-hero: clamp(2.5rem, 1.6rem + 3vw, 3.5rem);       /* 40 → 56 px */
+  --text-page: clamp(1.875rem, 1.5rem + 1.2vw, 2.5rem);   /* 30 → 40 px */
+  --text-section: clamp(1.375rem, 1.2rem + .6vw, 1.75rem); /* 22 → 28 px */
+  --text-card: 1.125rem;   /* 18 px */
+  --text-lead: 1.125rem;   /* 18 px */
+  --text-body: 1rem;       /* 16 px */
+  --text-ui: .9375rem;     /* 15 px */
+  --text-label: .875rem;   /* 14 px */
+  --text-caption: .8125rem;/* 13 px */
+  --text-micro: .75rem;    /* 12 px — the floor for any UI text */
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
+  --leading-body: 1.6;
+  --measure: 68ch;
+
+  /* ── Spacing (4 px base) ────────────────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* ── Layout ─────────────────────────────────────────── */
+  --container: 1200px;
+  --container-narrow: 760px;
+  --gutter: clamp(16px, 4vw, 40px);
+  --sidebar-w: 256px;
+  --topbar-h: 64px;
+  /* Breakpoints (for reference; CSS custom properties can't be used in @media):
+     sm 640px · md 768px · lg 1024px · xl 1280px */
+
+  /* ── Shape ──────────────────────────────────────────── */
+  --radius-sm: 6px;    /* badges, chips */
+  --radius-md: 10px;   /* buttons, inputs */
+  --radius-lg: 14px;   /* cards */
+  --radius-xl: 20px;   /* hero visuals, modals */
+  --radius-full: 999px;
+
+  --border: 1px solid var(--color-border);
+  --shadow-sm: 0 1px 2px rgb(23 35 59 / 6%);
+  --shadow-md: 0 8px 24px rgb(23 35 59 / 8%);
+  --shadow-lg: 0 24px 48px rgb(23 35 59 / 14%);
+
+  /* ── Icons ──────────────────────────────────────────── */
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-lg: 24px;
+
+  /* ── Interaction ────────────────────────────────────── */
+  --focus-ring: 0 0 0 3px var(--color-bg), 0 0 0 5px var(--color-accent);
+  --control-h: 44px;       /* minimum target size (WCAG 2.5.8 needs 24 px; 44 px is our floor) */
+  --control-h-sm: 36px;
+  --ease: cubic-bezier(.2, .7, .3, 1);
+  --duration: 160ms;
+
+  /* ── Legacy aliases (older screens) ─────────────────── */
+  --forest: var(--color-accent-strong);
+  --forest2: var(--color-accent);
+  --yellow: var(--color-accent);
+  --ink: var(--color-text);
+  --muted: var(--color-text-muted);
+  --line: var(--color-border);
+  --paper: var(--color-bg);
+  --wash: var(--color-bg-muted);
+  --radius: var(--radius-lg);
+
+  color-scheme: light;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --duration: 0ms; }
+  *, *::before, *::after { animation-duration: 0ms !important; transition-duration: 0ms !important; scroll-behavior: auto !important; }
+}

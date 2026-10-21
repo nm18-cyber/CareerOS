@@ -1,5 +1,7 @@
-import type { ReactNode } from "react";
+import type { InputHTMLAttributes, ReactNode } from "react";
+import { AlertCircle, ArrowLeft, Check, CheckCircle2 } from "lucide-react";
 import { enabledProviders } from "../lib/auth-providers";
+import { Brand } from "./brand";
 
 export type AuthSearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -23,18 +25,50 @@ export function param(params: Record<string, string | string[] | undefined>, nam
   return typeof value === "string" ? value : "";
 }
 
+export function Field({ label, hint, ...input }: { label: string; hint?: string } & InputHTMLAttributes<HTMLInputElement>) {
+  const hintId = hint ? `${input.name}-hint` : undefined;
+  return <label className="field">
+    <span className="field-label">{label}</span>
+    <input className="input" aria-describedby={hintId} {...input} />
+    {hint && <span className="field-hint" id={hintId}>{hint}</span>}
+  </label>;
+}
+
 export async function SocialButtons({ returnTo, divider }: { returnTo: string; divider: string }) {
   const enabled = await enabledProviders();
   const providers = [
-    { id: "google", label: "Continue with Google", mark: <span className="google-g">G</span> },
-    { id: "linkedin", label: "Continue with LinkedIn", mark: <span className="linkedin-in">in</span> },
+    { id: "google", name: "Google", mark: <span className="auth-provider-mark google-g" aria-hidden>G</span> },
+    { id: "linkedin", name: "LinkedIn", mark: <span className="auth-provider-mark linkedin-in" aria-hidden>in</span> },
   ] as const;
-  return <><div className="auth-divider"><span/> <small>{divider}</small> <span/></div>{providers.map(p => enabled[p.id]
-    ? <form method="post" action="/auth/oauth" key={p.id}><input type="hidden" name="provider" value={p.id}/><input type="hidden" name="return_to" value={returnTo}/><button className="provider-button" type="submit">{p.mark}{p.label}</button></form>
-    : <button className="provider-button provider-disabled" disabled title={`${p.label.slice(14)} sign-in is not switched on in Supabase yet`} key={p.id}>{p.mark}{p.label} <small>Not connected</small></button>)}</>;
+  return <div className="auth-social">
+    <div className="auth-divider"><span>{divider}</span></div>
+    {providers.map((p) => enabled[p.id]
+      ? <form method="post" action="/auth/oauth" key={p.id}><input type="hidden" name="provider" value={p.id} /><input type="hidden" name="return_to" value={returnTo} /><button className="outline-button button-block auth-provider" type="submit">{p.mark}Continue with {p.name}</button></form>
+      : <button className="outline-button button-block auth-provider" disabled aria-describedby={`${p.id}-off`} key={p.id}>{p.mark}Continue with {p.name}<small id={`${p.id}-off`}>Not connected yet</small></button>)}
+  </div>;
 }
 
-export function AuthShell({ eyebrow, title, intro, message, children, footer }: { eyebrow: string; title: ReactNode; intro: string; message?: string; children: ReactNode; footer: ReactNode }) {
+export function AuthShell({ label, title, intro, message, children, footer }: { label: string; title: ReactNode; intro: string; message?: string; children: ReactNode; footer: ReactNode }) {
   const notice = message ? MESSAGES[message] : undefined;
-  return <main className="auth-page"><div className="auth-shell"><a href="/" className="brand"><span className="brand-mark">✳</span><span>career<span className="brand-os">os</span></span></a><div className="auth-card"><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p className="auth-intro">{intro}</p>{notice && <p className={`auth-message${notice.error ? " error" : ""}`} role={notice.error ? "alert" : "status"}>{notice.text}</p>}{children}</div><p className="auth-footer">{footer}</p><a className="auth-home" href="/">← Back to CareerOS</a></div></main>;
+  return <div className="auth-page">
+    <a className="skip-link" href="#auth-form-start">Skip to form</a>
+    <main className="auth-main">
+      <div className="auth-top"><Brand /><a className="text-button" href="/"><ArrowLeft aria-hidden /> Back to home</a></div>
+      <div className="auth-card" id="auth-form-start">
+        <span className="label">{label}</span>
+        <h1>{title}</h1>
+        <p className="auth-intro">{intro}</p>
+        {notice && <div className={`alert ${notice.error ? "alert-error" : "alert-success"}`} role={notice.error ? "alert" : "status"}>{notice.error ? <AlertCircle aria-hidden /> : <CheckCircle2 aria-hidden />}<span>{notice.text}</span></div>}
+        {children}
+        <p className="auth-footer">{footer}</p>
+      </div>
+    </main>
+    <aside className="auth-aside" aria-label="Why CareerOS">
+      <div className="auth-aside-inner">
+        <p className="auth-quote">“Evidence beats adjectives.”</p>
+        <p>Your account keeps every resume, role and application in one private workspace.</p>
+        <ul>{["Resumes and cover letters, versioned", "Role matching against real job descriptions", "A tracker for every application"].map((t) => <li key={t}><Check aria-hidden size={18} />{t}</li>)}</ul>
+      </div>
+    </aside>
+  </div>;
 }

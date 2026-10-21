@@ -1,0 +1,85 @@
+/* Signed-in screens redesigned on the new system. */
+
+/* ── Dashboard (/home) ────────────────────────────────── */
+.dash-main.home { max-width: 1200px; margin: 0 auto; padding: var(--space-10) var(--gutter) var(--space-12); }
+.home-error { margin-bottom: var(--space-6); align-items: center; }
+.home-error span { flex: 1; }
+.home-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--space-6); align-items: start; }
+
+.home-steps .steps { margin-bottom: var(--space-2); }
+.home-task-list { list-style: none; padding: 0; margin: 0; }
+.home-task { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: var(--space-4); align-items: center; padding: var(--space-4) 0; border-bottom: var(--border); }
+.home-task:last-child { border-bottom: 0; padding-bottom: 0; }
+.home-task-check {
+  width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
+  border: 1.5px solid var(--color-border-strong); background: var(--color-bg); color: var(--color-text-muted);
+  font: var(--weight-semibold) var(--text-label)/1 var(--font-heading);
+}
+.home-task-check:hover { border-color: var(--color-accent); color: var(--color-accent-strong); }
+.home-task-check:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.home-task-check:disabled { cursor: progress; }
+.home-task.is-next .home-task-check { border-color: var(--color-accent); color: var(--color-accent-strong); background: var(--color-accent-faint); }
+.home-task.is-done .home-task-check { background: var(--color-success); border-color: var(--color-success); color: #fff; }
+.home-task-copy h3 { font: var(--weight-semibold) var(--text-ui)/1.35 var(--font-heading); margin: 0; letter-spacing: -0.005em; }
+.home-task-copy p { margin: 2px 0 0; font-size: var(--text-label); color: var(--color-text-muted); }
+.home-task.is-done .home-task-copy h3 { color: var(--color-text-muted); }
+
+.home-goal { min-height: 100%; }
+.home-goal-title { font: var(--weight-bold) var(--text-section)/1.2 var(--font-heading); letter-spacing: -0.02em; margin: 0; }
+.home-goal-next { margin: var(--space-2) 0 var(--space-5); color: var(--color-text-muted); font-size: var(--text-ui); }
+.home-goal-facts { margin: 0; display: grid; gap: var(--space-3); padding-top: var(--space-4); border-top: var(--border); }
+.home-goal-facts div { display: flex; justify-content: space-between; gap: var(--space-3); font-size: var(--text-label); }
+.home-goal-facts dt { color: var(--color-text-muted); }
+.home-goal-facts dd { margin: 0; font-weight: var(--weight-semibold); text-align: right; }
+.home-goal-skeleton { display: grid; gap: var(--space-3); }
+.home-goal-empty { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); }
+.home-goal-empty p { margin: 0; color: var(--color-text-muted); font-size: var(--text-ui); }
+.home-goal-form { display: grid; gap: var(--space-4); }
+
+.home-tools { grid-column: 1; }
+.home-section-head { display: flex; justify-content: space-between; align-items: center; margin: var(--space-4) 0 var(--space-3); }
+.home-section-head h2 { font-size: var(--text-card); margin: 0; letter-spacing: -0.01em; }
+.home-tool-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.home-tool { display: grid; grid-template-columns: 40px minmax(0, 1fr) 18px; gap: var(--space-3); align-items: center; height: 100%; padding: var(--space-4); background: var(--color-bg); border: var(--border); border-radius: var(--radius-lg); transition: border-color var(--duration) var(--ease); }
+.home-tool:hover { border-color: var(--color-accent); }
+.home-tool b { display: block; font: var(--weight-semibold) var(--text-ui)/1.3 var(--font-heading); }
+.home-tool small { display: block; margin-top: 2px; color: var(--color-text-muted); font-size: var(--text-caption); line-height: 1.45; }
+.home-tool-icon { width: 40px; height: 40px; display: grid; place-items: center; border-radius: var(--radius-md); background: var(--color-accent-soft); color: var(--color-accent-strong); }
+.home-tool-arrow { color: var(--color-text-muted); }
+.home-tool:hover .home-tool-arrow { color: var(--color-accent); }
+
+.home-lesson { grid-column: 2; grid-row: 2; }
+.home-lesson .card-meta { display: flex; align-items: center; gap: 6px; margin: 4px 0 0; }
+.home-video { position: relative; aspect-ratio: 16 / 9; border-radius: var(--radius-md); overflow: hidden; background: var(--color-text); margin-bottom: var(--space-4); }
+.home-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.home-footer { display: flex; justify-content: space-between; margin-top: var(--space-12); padding-top: var(--space-5); border-top: var(--border); font-size: var(--text-caption); color: var(--color-text-muted); }
+.home-footer a:hover { color: var(--color-accent-strong); text-decoration: underline; }
+
+@media (max-width: 1100px) {
+  .home-grid { grid-template-columns: 1fr; }
+  .home-tools, .home-lesson { grid-column: auto; grid-row: auto; }
+}
+@media (max-width: 640px) {
+  .dash-main.home { padding-top: var(--space-6); }
+  .home-tool-list { grid-template-columns: 1fr; }
+  .home-task { grid-template-columns: 32px minmax(0, 1fr); }
+  .home-task > a { grid-column: 2; justify-self: start; }
+  .page-header .page-actions, .page-header .page-actions .button { width: 100%; }
+}
+
+/* ── Design system reference (/design-system) ─────────── */
+.ds-page { padding-block: var(--space-12) var(--space-24); }
+.ds-page > header { max-width: 700px; margin-bottom: var(--space-12); }
+.ds-page h1 { font-size: var(--text-page); font-weight: 800; letter-spacing: -0.03em; margin: var(--space-3) 0; }
+.ds-section { padding-block: var(--space-10); border-top: var(--border); }
+.ds-section > h2 { font-size: var(--text-section); margin: 0 0 var(--space-2); }
+.ds-section > h2 + p { color: var(--color-text-muted); margin: 0 0 var(--space-6); max-width: 64ch; }
+.ds-row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+.ds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--space-4); }
+.ds-swatch { border: var(--border); border-radius: var(--radius-lg); overflow: hidden; font-size: var(--text-caption); }
+.ds-swatch > span { display: block; height: 72px; }
+.ds-swatch div { padding: var(--space-3); }
+.ds-swatch b { display: block; font-size: var(--text-label); }
+.ds-swatch code { color: var(--color-text-muted); }
+.ds-type > * { margin: 0 0 var(--space-3); }
+.ds-stack { display: grid; gap: var(--space-4); max-width: 420px; }
