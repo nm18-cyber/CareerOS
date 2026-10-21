@@ -1,0 +1,24 @@
+{
+  "name": "careeros",
+  "main": "dist/server/index.js",
+  "compatibility_date": "2026-05-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "no_bundle": true,
+  "assets": {
+    "directory": "./dist/client"
+  },
+  "rules": [
+    {
+      "type": "ESModule",
+      "globs": ["**/*.js", "**/*.mjs"]
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "careeros-db",
+      "database_id": "7b73480a-11cd-4f52-8a26-fe2c34213a00",
+      "migrations_dir": "./drizzle"
+    }
+  ]
+}

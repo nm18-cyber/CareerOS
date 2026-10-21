@@ -1,6 +1,16 @@
 import Link from "next/link";
-import { chatGPTSignInPath } from "../chatgpt-auth";
+import { redirect } from "next/navigation";
+import { AuthShell, param, type AuthSearchParams } from "../../components/auth-shell";
+import { currentUser } from "../../lib/access";
+import { safeReturnPath } from "../../lib/auth-path";
 
-export default function LoginPage() {
-  return <main className="auth-page"><div className="auth-shell"><Link href="/" className="brand"><span className="brand-mark">✳</span><span>career<span className="brand-os">os</span></span></Link><div className="auth-card"><span className="eyebrow">WELCOME BACK</span><h1>Pick up where<br/><em>you left off.</em></h1><p className="auth-intro">Sign in to return to your resumes and career workspace.</p><a className="button button-yellow auth-primary" href={chatGPTSignInPath("/home")} target="_top">Continue securely with ChatGPT <span>→</span></a><div className="auth-divider"><span/> <small>OTHER SIGN-IN OPTIONS</small> <span/></div><button className="provider-button provider-disabled" disabled title="Google OAuth credentials are not configured for this Site"><span className="google-g">G</span>Continue with Google <small>Not connected</small></button><button className="provider-button provider-disabled" disabled title="LinkedIn OAuth credentials are not configured for this Site"><span className="linkedin-in">in</span>Continue with LinkedIn <small>Not connected</small></button><p className="auth-note">Google and LinkedIn sign-in can be enabled once their OAuth app credentials are connected.</p></div><p className="auth-footer">New to CareerOS? <Link href="/signup">Create an account</Link></p><Link className="auth-home" href="/">← Back to CareerOS</Link></div></main>;
+export const dynamic = "force-dynamic";
+
+export default async function LoginPage({ searchParams }: { searchParams: AuthSearchParams }) {
+  const params = await searchParams;
+  const returnTo = safeReturnPath(param(params, "return_to"));
+  if (await currentUser()) redirect(returnTo);
+  return <AuthShell eyebrow="WELCOME BACK" title={<>Pick up where<br/><em>you left off.</em></>} intro="Sign in to return to your resumes and career workspace." message={param(params, "error") || param(params, "notice")} footer={<>New to CareerOS? <Link href={`/signup?return_to=${encodeURIComponent(returnTo)}`}>Create an account</Link></>}>
+    <form className="auth-form" method="post" action="/auth/login"><input type="hidden" name="return_to" value={returnTo}/><label>Email<input type="email" name="email" autoComplete="email" required/></label><label>Password<input type="password" name="password" autoComplete="current-password" required/></label><div className="auth-link-row"><Link href="/forgot-password">Forgot password?</Link></div><button className="button button-yellow auth-primary" type="submit">Sign in <span>→</span></button></form>
+  </AuthShell>;
 }
