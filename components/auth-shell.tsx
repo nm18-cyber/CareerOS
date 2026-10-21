@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 
 export type AuthSearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -24,5 +23,5 @@ export function param(params: Record<string, string | string[] | undefined>, nam
 
 export function AuthShell({ eyebrow, title, intro, message, children, footer }: { eyebrow: string; title: ReactNode; intro: string; message?: string; children: ReactNode; footer: ReactNode }) {
   const notice = message ? MESSAGES[message] : undefined;
-  return <main className="auth-page"><div className="auth-shell"><Link href="/" className="brand"><span className="brand-mark">✳</span><span>career<span className="brand-os">os</span></span></Link><div className="auth-card"><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p className="auth-intro">{intro}</p>{notice && <p className={`auth-message${notice.error ? " error" : ""}`} role={notice.error ? "alert" : "status"}>{notice.text}</p>}{children}</div><p className="auth-footer">{footer}</p><Link className="auth-home" href="/">← Back to CareerOS</Link></div></main>;
+  return <main className="auth-page"><div className="auth-shell"><a href="/" className="brand"><span className="brand-mark">✳</span><span>career<span className="brand-os">os</span></span></a><div className="auth-card"><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p className="auth-intro">{intro}</p>{notice && <p className={`auth-message${notice.error ? " error" : ""}`} role={notice.error ? "alert" : "status"}>{notice.text}</p>}{children}</div><p className="auth-footer">{footer}</p><a className="auth-home" href="/">← Back to CareerOS</a></div></main>;
 }
