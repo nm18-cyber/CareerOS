@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { authConfig } from "./lib/auth-config";
+import { GUEST_COOKIE, GUEST_MAX_AGE, isGuestId } from "./lib/guest";
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
@@ -35,36 +34,26 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  let response = NextResponse.next({
+  const existing = request.cookies.get(GUEST_COOKIE)?.value;
+  const issued = isGuestId(existing) ? null : crypto.randomUUID();
+
+  if (issued) {
+    request.cookies.set(GUEST_COOKIE, issued);
+    forwarded.set("cookie", request.cookies.toString());
+  }
+
+  const response = NextResponse.next({
     request: { headers: forwarded },
   });
 
-  const config = authConfig();
-
-  if (config) {
-    const client = createServerClient(config.url, config.key, {
-      cookieOptions: {
-        httpOnly: true,
-        secure: config.secure,
-        sameSite: "lax",
-        path: "/",
-      },
-      cookies: {
-        getAll() { return request.cookies.getAll(); },
-        setAll(values) {
-          for (const { name, value } of values) {
-            request.cookies.set(name, value);
-          }
-          forwarded.set("cookie", request.cookies.toString());
-          response = NextResponse.next({ request: { headers: forwarded } });
-          for (const { name, value, options } of values) {
-            response.cookies.set(name, value, options);
-          }
-        },
-      },
+  if (issued) {
+    response.cookies.set(GUEST_COOKIE, issued, {
+      httpOnly: true,
+      secure: request.nextUrl.protocol === "https:",
+      sameSite: "lax",
+      path: "/",
+      maxAge: GUEST_MAX_AGE,
     });
-
-    await client.auth.getUser();
   }
 
   response.headers.set("Cache-Control", "private, no-store");

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { BriefcaseBusiness, Building2, FileText, Grid2X2, LayoutDashboard, ListChecks, LogOut, Menu, Search, Settings, Sparkles, Users, X, BookOpen } from "lucide-react";
+import { BriefcaseBusiness, Building2, FileText, Grid2X2, LayoutDashboard, ListChecks, Menu, Search, Settings, Sparkles, Users, X, BookOpen } from "lucide-react";
 import { BrandMark } from "./brand";
 
 export const workspaceGroups = [
@@ -52,7 +52,6 @@ export function ProductSidebar({ name, active = "/resume-builder/resumes" }: { n
         <div className="app-user">
           <span className="app-avatar" aria-hidden>{name.slice(0, 1).toUpperCase()}</span>
           <span className="app-user-name">{name}</span>
-          <a className="icon-button" href="/logout" aria-label="Sign out" data-tooltip="Sign out"><LogOut size={17} /></a>
         </div>
       </div>
     </div>

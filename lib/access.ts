@@ -1,23 +1,12 @@
 import { env } from "cloudflare:workers";
-import { supabaseServer } from "./supabase-server";
+import { cookies } from "next/headers";
+import { GUEST_COOKIE, isGuestId } from "./guest";
 
 export async function currentUser() {
-  const client = await supabaseServer();
+  const jar = await cookies();
+  const guestId = jar.get(GUEST_COOKIE)?.value;
 
-  if (!client) {
-    return null;
-  }
-
-  const {
-    data: { user },
-    error,
-  } = await client.auth.getUser();
-
-  if (
-    error ||
-    !user?.email ||
-    !user.email_confirmed_at
-  ) {
+  if (!isGuestId(guestId)) {
     return null;
   }
 
@@ -25,14 +14,11 @@ export async function currentUser() {
     throw new Error("D1 binding DB is missing");
   }
 
-  const userId = `supabase:${user.id}`;
+  const userId = `guest:${guestId}`;
+  const email = `${guestId}@guest.invalid`;
+  const displayName = "Guest";
 
-  const fullName =
-    typeof user.user_metadata?.full_name === "string"
-      ? user.user_metadata.full_name.slice(0, 160)
-      : null;
-
-  const admin = env.ADMIN_USER_ID === user.id;
+  const admin = env.ADMIN_USER_ID === guestId;
 
   await env.DB.prepare(`
     INSERT INTO users (
@@ -42,11 +28,9 @@ export async function currentUser() {
       auth_provider,
       role
     )
-    VALUES (?, ?, ?, 'supabase', ?)
+    VALUES (?, ?, ?, 'guest', ?)
 
     ON CONFLICT(id) DO UPDATE SET
-      email = excluded.email,
-      display_name = excluded.display_name,
       role = CASE
         WHEN ? = '1' THEN 'ADMIN'
         ELSE users.role
@@ -55,8 +39,8 @@ export async function currentUser() {
   `)
     .bind(
       userId,
-      user.email,
-      fullName ?? user.email,
+      email,
+      displayName,
       admin ? "ADMIN" : "USER",
       admin ? "1" : "0",
     )
@@ -76,11 +60,22 @@ export async function currentUser() {
 
   return {
     userId,
-    email: user.email,
-    fullName,
-    displayName: fullName ?? user.email,
+    guestId,
+    email,
+    fullName: displayName as string | null,
+    displayName,
     role: record.role,
   };
+}
+
+export async function requireUser() {
+  const user = await currentUser();
+
+  if (!user) {
+    throw new Error("Workspace unavailable");
+  }
+
+  return user;
 }
 
 export async function requireAdmin() {

@@ -3,11 +3,11 @@ declare namespace Cloudflare {
     DB?: D1Database;
     BUCKET?: R2Bucket;
 
-    SUPABASE_URL?: string;
-    SUPABASE_PUBLISHABLE_KEY?: string;
-    APP_URL?: string;
-
     ADMIN_USER_ID?: string;
     ADMIN_EMAIL?: string;
+
+    GROQ_API_KEY?: string;
+    GEMINI_API_KEY?: string;
+    OPENAI_API_KEY?: string;
   }
 }
