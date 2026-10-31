@@ -624,3 +624,19 @@ button:disabled{opacity:.5;cursor:not-allowed}
 
 
 .status-tag{font-size:12px;text-transform:capitalize;background:var(--color-bg-muted);border-radius:5px;padding:5px 7px;color:var(--color-text-muted)}
+/* Resume editor: per-section entry forms (month/year pickers, skill tags) */
+.rs-date{border:0;padding:0;min-width:0}
+.rs-date legend{padding:0;font-size:14px;color:var(--color-text)}
+.rs-date>div{display:grid;grid-template-columns:1.4fr 1fr;gap:8px;margin-top:7px}
+.rs-date select{width:100%;padding:9px 11px;border:1px solid var(--color-border-strong);border-radius:3px;background:white;font-size:15px;color:var(--color-text)}
+.rs-date:disabled{opacity:.55}
+.rs-current{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--color-text);margin:0 0 6px}
+.rs-current input{accent-color:var(--color-accent);width:16px;height:16px}
+.rs-date-error{color:var(--color-error);font-size:13px;margin:4px 0}
+.rs-entry small{display:block;color:var(--color-text-muted);font-size:12px;margin-top:6px}
+.rs-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;padding:6px;border:1px solid var(--color-border-strong);border-radius:3px;background:white;min-height:46px}
+.rs-tags:focus-within{outline:2px solid var(--color-accent);outline-offset:1px}
+.rs-tags>span{display:inline-flex;align-items:center;gap:4px;background:var(--color-accent-soft);color:var(--color-accent-strong);border-radius:30px;padding:5px 6px 5px 11px;font-size:13px}
+.rs-edit-pane .rs-tags button{border:0!important;background:none!important;padding:2px!important;color:inherit}
+.rs-tags>input{flex:1;min-width:120px;border:0;padding:5px;font-size:15px;color:var(--color-text);background:transparent}
+.rs-shell .rs-tags>input:focus{outline:none}
