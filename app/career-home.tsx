@@ -167,7 +167,7 @@ export default function CareerHome({ user }: { user: User }) {
         <nav aria-label="Resources"><h3>Resources</h3><a href="/resources">Career library</a><a href="/search">Search resources</a></nav>
         <nav aria-label="Account"><h3>Account</h3>{user ? <><a href="/home">Workspace</a><form method="post" action="/logout"><button className="link-button" type="submit">Sign out</button></form></> : <><a href="/login">Sign in</a><a href="/signup">Create account</a></>}<a href="/admin">Admin</a></nav>
       </div>
-      <div className="container mk-footer-legal"><small>© 2026 CareerOS</small></div>
+      <div className="container mk-footer-legal"><small>© 2026 CareerOS · <a href="/privacy">Privacy policy</a> · <a href="/terms">Terms of use</a></small></div>
     </footer>
   </div>;
 }

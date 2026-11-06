@@ -18,5 +18,6 @@ export default async function SignupPage({ searchParams }: { searchParams: AuthS
       <button className="button button-block" type="submit">Create account</button>
     </form>
     <SocialButtons returnTo={returnTo} divider="or sign up with" />
+    <p className="auth-legal">By creating an account you agree to the <a href="/terms">Terms of use</a> and confirm you have read the <a href="/privacy">Privacy policy</a>. You must be 18 or older.</p>
   </AuthShell>;
 }
