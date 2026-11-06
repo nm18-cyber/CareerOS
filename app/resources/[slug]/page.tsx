@@ -1,4 +1,4 @@
-import { env } from "cloudflare:workers";
+import {DB} from "../../../lib/db";
 import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { ensureResources } from "../../../lib/resource-catalog";
@@ -11,9 +11,9 @@ type Resource = { slug: string; title: string; description: string; category: st
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   await ensureResources();
-  const r = await env.DB?.prepare("SELECT * FROM cms_resources WHERE slug=? AND published=1").bind(slug).first<Resource>();
+  const r = await DB?.prepare("SELECT * FROM cms_resources WHERE slug=? AND published=1").bind(slug).first<Resource>();
   if (!r) notFound();
-  const related = await env.DB?.prepare("SELECT slug,title,description FROM cms_resources WHERE published=1 AND slug<>? AND resource_type<>'link' ORDER BY CASE WHEN category=? THEN 0 ELSE 1 END,title LIMIT 6").bind(slug, r.category).all<{ slug: string; title: string; description: string }>();
+  const related = await DB?.prepare("SELECT slug,title,description FROM cms_resources WHERE published=1 AND slug<>? AND resource_type<>'link' ORDER BY CASE WHEN category=? THEN 0 ELSE 1 END,title LIMIT 6").bind(slug, r.category).all<{ slug: string; title: string; description: string }>();
   const workspace = r.slug.includes("job") ? { href: "/discover-jobs", label: "Discover jobs" } : r.slug.includes("path") ? { href: "/ai-job-search", label: "Ask the Career Assistant" } : { href: "/resume-builder/resumes", label: "Open Resume Studio" };
   return <div className="lib">
     <a className="skip-link" href="#main">Skip to content</a>

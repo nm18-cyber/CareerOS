@@ -1,4 +1,4 @@
-import {env} from 'cloudflare:workers';
+import {env} from 'cloudflare:workers';import {DB} from './db';
 import {z} from 'zod';
 import {HttpError} from './server-guard';
 export const aiSchema=z.object({model:z.string().regex(/^[a-zA-Z0-9._\/-]{1,80}$/),systemPrompt:z.string().trim().min(20).max(8000),maxTokens:z.number().int().min(128).max(4096)}).strict();
@@ -14,7 +14,7 @@ export function activeProvider(){const vars=env as unknown as Record<string,stri
 export function aiMode(){return activeProvider()?'live':'demo'}
 export function aiProvider(){return activeProvider()?.name??'Demo'}
 export function aiReady(){return true}
-export async function settings(){const row=await env.DB?.prepare("SELECT value FROM ai_settings WHERE key='model'").first<{value:string}>();if(row){const result=aiSchema.safeParse(JSON.parse(row.value));if(result.success)return result.data}return {...defaults,model:activeProvider()?.model??defaults.model}}
+export async function settings(){const row=await DB?.prepare("SELECT value FROM ai_settings WHERE key='model'").first<{value:string}>();if(row){const result=aiSchema.safeParse(JSON.parse(row.value));if(result.success)return result.data}return {...defaults,model:activeProvider()?.model??defaults.model}}
 export type DemoContext={mode?:string;resumeFacts?:string;includeJobs?:boolean;jobs?:{title:string;company:string;location:string;url:string}[]};
 export async function* modelStream(messages:{role:string;content:string}[],config:typeof defaults,signal:AbortSignal,demo:DemoContext={}){
  const provider=activeProvider();

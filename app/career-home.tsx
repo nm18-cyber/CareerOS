@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, ChevronDown, ChevronRight, FileText, ListChecks, Menu, PenLine, Search, ShieldCheck, Sparkles, Target, X } from "lucide-react";
 import { Brand } from "../components/brand";
 
+type User = { name: string; email: string } | null;
 type ResourceApi = { resource_type: string; title: string; description: string; slug: string };
 type Hub = { title: string; desc: string; slug: string };
 
@@ -28,7 +29,7 @@ const modules = [
   { title: "Job tracker", desc: "Every application, its status and the next follow-up.", href: "/jobs", icon: ListChecks },
 ];
 
-export default function CareerHome() {
+export default function CareerHome({ user }: { user: User }) {
   const [menu, setMenu] = useState<"tools" | "resources" | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hub, setHub] = useState<Hub[]>(fallbackHub);
@@ -65,9 +66,10 @@ export default function CareerHome() {
             {menu === "resources" && <div className="mk-panel mk-panel-resources" id="menu-resources"><div className="mk-panel-grid">{hub.map((r) => <a key={r.slug} href={`/resources/${encodeURIComponent(r.slug)}`} className="mk-panel-link"><span><b>{r.title}</b><small>{r.desc}</small></span></a>)}</div><a className="text-button" href="/resources">Browse the full library <ArrowRight aria-hidden /></a></div>}
           </div>
           <a className="mk-nav-link" href="#how-it-works" onClick={() => { setMenu(null); setMobileOpen(false); }}>How it works</a>
+          {!user && <a className="mk-nav-link mk-nav-signin" href="/login">Sign in</a>}
         </nav>
         <div className="mk-header-actions">
-          <a className="button button-small" href="/home">Get started <ArrowRight aria-hidden /></a>
+          {user ? <a className="button button-small" href="/home">Open workspace <ArrowRight aria-hidden /></a> : <><a className="mk-signin" href="/login">Sign in</a><a className="button button-small" href="/signup">Get started</a></>}
           <button className="icon-button mk-menu-toggle" aria-expanded={mobileOpen} aria-label={mobileOpen ? "Close menu" : "Open menu"} onClick={() => { setMobileOpen(!mobileOpen); setMenu(null); }}>{mobileOpen ? <X size={20} /> : <Menu size={20} />}</button>
         </div>
       </div>
@@ -80,7 +82,7 @@ export default function CareerHome() {
           <h1 id="hero-title">Make your experience <em>impossible to misread.</em></h1>
           <p className="mk-lead">CareerOS turns your work history into evidence-led resumes, checks each one against the role you want, and keeps every application in one calm workspace.</p>
           <div className="mk-hero-actions">
-            <a href="/home" className="button">Build your resume — free <ArrowRight aria-hidden /></a>
+            <a href={user ? "/home" : "/signup"} className="button">{user ? "Go to your workspace" : "Build your resume — free"} <ArrowRight aria-hidden /></a>
             <a href="#how-it-works" className="outline-button">See how it works</a>
           </div>
           <ul className="mk-proof">{["Free to start", "ATS-friendly templates", "Private to your account"].map((t) => <li key={t}><Check aria-hidden size={16} />{t}</li>)}</ul>
@@ -137,7 +139,7 @@ export default function CareerHome() {
             <span className="label">One workspace</span>
             <h2 id="workspace-title">Everything your search needs, and nothing it doesn’t.</h2>
             <p>Documents, role matching, research and tracking share the same profile — so each tool knows the role you’re aiming for.</p>
-            <a className="button" href="/home">Start for free <ArrowRight aria-hidden /></a>
+            <a className="button" href={user ? "/home" : "/signup"}>{user ? "Open your workspace" : "Create a free account"} <ArrowRight aria-hidden /></a>
           </div>
           <ul className="mk-modules">{modules.map(({ title, desc, href, icon: Icon }) => <li key={title}><a href={href}><span className="mk-module-icon"><Icon aria-hidden size={20} /></span><span><b>{title}</b><small>{desc}</small></span><ChevronRight aria-hidden className="mk-module-arrow" size={18} /></a></li>)}</ul>
         </div>
@@ -153,7 +155,7 @@ export default function CareerHome() {
       <section className="mk-cta" aria-labelledby="cta-title">
         <div className="container mk-cta-inner">
           <h2 id="cta-title">Your next role starts with a clearer story.</h2>
-          <div><a href="/home" className="button">Build your free resume <ArrowRight aria-hidden /></a><p>Free to use. No sign-up required.</p></div>
+          <div><a href={user ? "/home" : "/signup"} className="button">{user ? "Open your workspace" : "Build your free resume"} <ArrowRight aria-hidden /></a><p>Free to start. No card required.</p></div>
         </div>
       </section>
     </main>
@@ -163,7 +165,7 @@ export default function CareerHome() {
         <div className="mk-footer-brand"><Brand /><p>Clarity for the work ahead.</p></div>
         <nav aria-label="Product"><h3>Product</h3><a href="/resume-builder/resumes">Resume Studio</a><a href="/jobs">Job tracker</a><a href="/ai-job-search">Career Assistant</a><a href="/tools">All tools</a></nav>
         <nav aria-label="Resources"><h3>Resources</h3><a href="/resources">Career library</a><a href="/search">Search resources</a></nav>
-        <nav aria-label="Workspace"><h3>Workspace</h3><a href="/home">Workspace</a><a href="/settings">Settings</a><a href="/admin">Admin</a></nav>
+        <nav aria-label="Account"><h3>Account</h3>{user ? <><a href="/home">Workspace</a><form method="post" action="/logout"><button className="link-button" type="submit">Sign out</button></form></> : <><a href="/login">Sign in</a><a href="/signup">Create account</a></>}<a href="/admin">Admin</a></nav>
       </div>
       <div className="container mk-footer-legal"><small>© 2026 CareerOS</small></div>
     </footer>

@@ -1,6 +1,6 @@
 # vinext-starter
 
-A clean full-stack starter running on [vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and Drizzle support.
+A clean full-stack starter running on [vinext](https://github.com/cloudflare/vinext), hosted on Cloudflare Workers, with data in Neon Postgres and sign-in through Neon Auth.
 
 ## Prerequisites
 
@@ -37,38 +37,51 @@ Local tool usage metrics are disabled by default. Set `WRANGLER_SEND_METRICS=tru
 ## Included Shape
 
 - edit site code under `app/`
-- `lib/access.ts` and `lib/guest.ts` provide the anonymous guest identity (no sign-in)
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/index.ts` reads the D1 binding from the Cloudflare Worker environment
-- `db/schema.ts` starts intentionally empty
-- `@cloudflare/workers-types` provides Worker types; `cloudflare-env.d.ts` declares optional `DB`/`BUCKET` bindings—update these declarations if binding names change
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
+- **Hosting:** Cloudflare Workers (`wrangler.deploy.jsonc`)
+- **Data:** Neon Postgres. `lib/db.ts` connects with `@neondatabase/serverless` over HTTP; `lib/db-core.ts` keeps the `DB.prepare(sql).bind(...).first()/all()/run()` and `DB.batch()` API the routes use and rewrites `?` placeholders for Postgres
+- **Schema:** `db/postgres/schema.sql` (tables) and `db/postgres/seed.sql` (starter resources). The old D1 migrations in `drizzle/` are kept for history only
+- **Sign-in:** Neon Auth (`@neon/auth`). `lib/auth/server.ts` sets it up, `app/auth/*` handles the forms, `middleware.ts` finishes Google sign-in and refreshes sessions, and `lib/access.ts` maps the Neon user to a `neon:<id>` row in `users`
+- `cloudflare-env.d.ts` lists every runtime variable
 
-## Guest Access (No Sign-In)
+## Neon setup
 
-CareerOS has no login. `middleware.ts` gives every visitor a random guest ID in the httpOnly `careeros_guest` cookie (about 13 months), and `currentUser()` in `lib/access.ts` maps it to a `guest:<id>` row in `users`. All user-owned records are keyed by that ID, so each browser has its own private workspace. Clearing cookies or switching browsers starts a new, empty workspace.
+Current project: Neon `careeros` (`divine-band-41792701`, AWS Singapore `aws-ap-southeast-1`, Postgres 18), with Neon Auth on the `neondb` database.
 
-To grant admin access, open `/admin` in your browser, copy the guest ID shown there into the `ADMIN_USER_ID` runtime variable, and reload.
+1. **Create the project.** At [neon.tech](https://neon.tech) (or `npx neonctl projects create`), create a project in a region close to your users. Copy the **pooled** connection string from **Connect**.
+2. **Load the data.** Export the live D1 database, then import it:
+   ```sh
+   pnpm exec wrangler d1 export careeros-db --remote --config wrangler.deploy.jsonc --output careeros-d1.sql
+   DATABASE_URL='postgresql://...' node scripts/neon-import.mjs careeros-d1.sql
+   ```
+   The import creates the tables, copies every row, adds starter content and prints source vs. target row counts. It refuses to run if the Neon database already has users. Rehearse first with `node scripts/neon-import.mjs careeros-d1.sql --local` (nothing is sent anywhere). For a fresh database with no old data, run `db/postgres/schema.sql` then `db/postgres/seed.sql` in the Neon SQL Editor instead.
+3. **Turn on Neon Auth.** In the Neon Console open **Auth** and enable it (or `neonctl neon-auth enable`), and copy the **Auth URL**. Add `https://careeros.nmtricone.workers.dev` as a trusted domain, keep **Google** enabled under OAuth providers, and turn on **require email verification** with the **OTP** method (the shared email sender only supports codes). Neon's shared Google keys and email sender are for development: they show Neon branding. For production, add your own Google OAuth client and email provider.
+4. **Set the Worker secrets**, then deploy:
+   ```sh
+   pnpm exec wrangler secret put DATABASE_URL --config wrangler.deploy.jsonc
+   pnpm exec wrangler secret put NEON_AUTH_BASE_URL --config wrangler.deploy.jsonc
+   pnpm exec wrangler secret put NEON_AUTH_COOKIE_SECRET --config wrangler.deploy.jsonc   # 32+ random characters: openssl rand -base64 32
+   pnpm exec wrangler secret put APP_URL --config wrangler.deploy.jsonc                   # https://careeros.nmtricone.workers.dev
+   pnpm exec wrangler secret put ADMIN_EMAIL --config wrangler.deploy.jsonc               # your sign-in email
+   pnpm build && pnpm exec wrangler deploy --config wrangler.deploy.jsonc
+   ```
+   For local preview, put the same names in `.dev.vars` (git-ignored).
 
-## Local D1 migrations
+## Accounts and existing data
 
-For a D1-backed local preview, generate SQL with `npm run db:generate`. Build once through the Sites skill's build entrypoint (or `npm run build` for standalone use) to generate `dist/server/wrangler.json`, rebuilding if bindings change. From the project root, apply each pending migration in order:
+Workspace pages require sign-in; signed-out visitors go to `/login` and return to the page they asked for. API routes answer `401` instead of redirecting.
 
-```sh
-node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_example.sql
-```
-
-Replace the filename with the pending migration and `DB` with your D1 binding name if different. Use `.wrangler/state`, not `.wrangler/state/v3`; Wrangler adds the versioned directories. Do not replay migrations already applied locally. This updates only the preview database; publishing applies production migrations separately.
+- **Email and password** or **Google**, both through Neon Auth. New password accounts confirm their email with a 6-digit code (`/verify-email`); password reset also uses an emailed code (`/forgot-password` → `/reset-password`).
+- **Earlier Supabase accounts:** when someone signs in with the same email, their old resumes, jobs and history move to the new account, but only after Neon Auth has verified the email address.
+- **Guest workspaces** (from the no-sign-in period): the browser's `careeros_guest` cookie is still recognised, and that guest's work moves into the account on first sign-in.
+- **Admin:** set `ADMIN_EMAIL` to a verified email (or `ADMIN_USER_ID` to the Neon user ID shown on `/admin`).
 
 ## Diagnostic Commands
 
 - `npm run install:ci`: perform the one locked dependency install
 - `npm run dev`: start the Vite/Vinext development server
 - `npm run build`: build the deployable Sites artifact
-- `npm run start`: preview the built Worker locally with D1/R2 support
-- `npm run db:generate`: generate Drizzle migrations after schema changes
+- `npm run start`: preview the built Worker locally (needs `DATABASE_URL` and the Neon Auth values in `.dev.vars`)
+- `node scripts/neon-import.mjs <d1-export.sql> [--local]`: load a D1 export into Neon
 
 When using the Sites plugin, follow its skill instructions for installation, builds, and publishing. These npm commands remain available for standalone use.
 
@@ -77,4 +90,5 @@ The portable build runs Vinext directly without a host `timeout` command. The ma
 ## Learn More
 
 - [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+- [Neon serverless driver](https://neon.com/docs/serverless/serverless-driver)
+- [Neon Auth](https://neon.com/docs/auth/overview)

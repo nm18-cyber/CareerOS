@@ -4,7 +4,7 @@ The existing Sites project and its private audience are retained.
 
 ## AI demo and live generation
 
-Without a provider key, chat and writing use clearly labelled local templates. Responses still stream through the server and are saved to D1. This is simulated AI, not personalized model reasoning. No fake API key is embedded in the code.
+Without a provider key, chat and writing use clearly labelled local templates. Responses still stream through the server and are saved to the database. This is simulated AI, not personalized model reasoning. No fake API key is embedded in the code.
 
 To enable live generation, add one of these secrets in the Site's runtime environment and redeploy. If several are set, the first in this order is used:
 
@@ -22,10 +22,10 @@ Generation has a 60-second timeout, 30 requests per account per hour, a 6,000-ch
 
 The server requests the public Arbeitnow endpoint, with one-hour database caching and a maximum 24-hour stale fallback. It shows the latest source page (up to 150 entries), not a worldwide job index. Location is a text filter, remote status is provider-supplied, and industry filtering uses source tags. Attribution and original listing links are shown. Feed failures produce an explicit error or a stale-cache notice; no fictional vacancies are substituted.
 
-## Access: no sign-in
+## Data and sign-in: Neon
 
-Anyone can use CareerOS without an account. Each browser gets an anonymous guest ID cookie that scopes its data (see README, "Guest Access"). If the site is hosted on Sites, set its access policy to public so the platform does not require ChatGPT sign-in.
+Application data is in Neon Postgres (`DATABASE_URL`) and accounts are Neon Auth users (`NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET`). See README, "Neon setup" and "Accounts and existing data".
 
 ## Validation
 
-Run `node tests/workspace-regression.mjs`, `node tests/ai-workflows.mjs`, and `node node_modules/typescript/bin/tsc --noEmit --incremental false`, then the Sites build helper. The API workflow suites execute production route code against SQLite with a mocked guest identity. AI provider contract tests use a mock SSE provider, not paid live requests. Browser end-to-end coverage and real provider connectivity must be reported separately.
+Run `node tests/workspace-regression.mjs`, `node tests/ai-workflows.mjs`, `node tests/auth-handover.mjs`, and `node node_modules/typescript/bin/tsc --noEmit --incremental false`, then `pnpm build` and `pnpm exec wrangler deploy --dry-run --config wrangler.deploy.jsonc`. The suites execute production route code against an in-memory Postgres (PGlite) loaded with `db/postgres/schema.sql`, with a mocked user or a stubbed Neon Auth session. They do not reach a live Neon project, Google or the email service. AI provider contract tests use a mock SSE provider, not paid live requests. Browser end-to-end coverage and real provider connectivity must be reported separately.

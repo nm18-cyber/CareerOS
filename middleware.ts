@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { GUEST_COOKIE, GUEST_MAX_AGE, isGuestId } from "./lib/guest";
+import { processAuthMiddleware } from "@neon/auth/server";
+import { authSettings } from "./lib/auth/server";
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
@@ -17,7 +18,9 @@ export async function middleware(request: NextRequest) {
       return NextResponse.json({ error: "Cross-origin request rejected" }, { status: 403 });
     }
 
-    if (path.startsWith("/api/") && request.method !== "DELETE" && !request.headers.get("content-type")?.includes("application/json")) {
+    const jsonApi = path.startsWith("/api/") && !path.startsWith("/api/auth/");
+
+    if (jsonApi && request.method !== "DELETE" && !request.headers.get("content-type")?.includes("application/json")) {
       return NextResponse.json({ error: "JSON required" }, { status: 415 });
     }
 
@@ -34,26 +37,44 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  const existing = request.cookies.get(GUEST_COOKIE)?.value;
-  const issued = isGuestId(existing) ? null : crypto.randomUUID();
+  // Lets requireUser() send signed-out visitors back here after they sign in.
+  forwarded.set("x-careeros-path", path + request.nextUrl.search);
 
-  if (issued) {
-    request.cookies.set(GUEST_COOKIE, issued);
-    forwarded.set("cookie", request.cookies.toString());
+  // Neon Auth: finish Google sign-in (swap the one-time verifier for a session cookie) and
+  // refresh the session. Pages decide who may see them (requireUser), so a "go to login"
+  // result is ignored here and API routes keep answering 401 instead of redirecting.
+  const settings = authSettings();
+  let cookies: string[] = [];
+
+  if (settings && !path.startsWith("/api/auth/")) {
+    const result = await processAuthMiddleware({
+      request,
+      pathname: path,
+      skipRoutes: [],
+      loginUrl: "/login",
+      baseUrl: settings.baseUrl,
+      cookieSecret: settings.cookies.secret,
+    });
+
+    if (result.action === "redirect_oauth") {
+      const redirect = NextResponse.redirect(result.redirectUrl);
+      for (const cookie of result.cookies) redirect.headers.append("Set-Cookie", cookie);
+      return redirect;
+    }
+
+    if (result.action === "allow") {
+      for (const [name, value] of Object.entries(result.headers ?? {})) forwarded.set(name, value);
+    }
+
+    cookies = result.cookies ?? [];
   }
 
   const response = NextResponse.next({
     request: { headers: forwarded },
   });
 
-  if (issued) {
-    response.cookies.set(GUEST_COOKIE, issued, {
-      httpOnly: true,
-      secure: request.nextUrl.protocol === "https:",
-      sameSite: "lax",
-      path: "/",
-      maxAge: GUEST_MAX_AGE,
-    });
+  for (const cookie of cookies) {
+    response.headers.append("Set-Cookie", cookie);
   }
 
   response.headers.set("Cache-Control", "private, no-store");

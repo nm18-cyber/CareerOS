@@ -12,13 +12,8 @@
       "type": "ESModule",
       "globs": ["**/*.js", "**/*.mjs"]
     }
-  ],
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "careeros-db",
-      "database_id": "7b73480a-11cd-4f52-8a26-fe2c34213a00",
-      "migrations_dir": "./drizzle"
-    }
   ]
+  // Data lives in Neon Postgres (secret DATABASE_URL); sign-in uses Neon Auth
+  // (NEON_AUTH_BASE_URL, NEON_AUTH_COOKIE_SECRET). The old D1 database "careeros-db"
+  // is no longer bound but still exists in Cloudflare as a fallback copy.
 }

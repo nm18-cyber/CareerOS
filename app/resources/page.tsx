@@ -1,4 +1,4 @@
-import { env } from "cloudflare:workers";
+import {DB} from "../../lib/db";
 import { ensureResources } from "../../lib/resource-catalog";
 import { SiteHeader } from "../../components/site-header";
 import ResourceList from "./resource-list";
@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function Page() {
   await ensureResources();
-  const rows = await env.DB?.prepare("SELECT id,slug,title,description,category,resource_type FROM cms_resources WHERE published=1 ORDER BY category,title").all();
+  const rows = await DB?.prepare("SELECT id,slug,title,description,category,resource_type FROM cms_resources WHERE published=1 ORDER BY category,title").all();
   return <div className="lib">
     <a className="skip-link" href="#main">Skip to content</a>
     <SiteHeader />

@@ -1,8 +1,8 @@
-import {env} from 'cloudflare:workers';
+import {DB} from '../../../../lib/db';
 import {currentUser} from '../../../../lib/access';
 import {companySchema,contactSchema,input,problem} from '../../../../lib/workspace-validation';
 export const dynamic='force-dynamic';
-async function context(request:Request){const collection=new URL(request.url).pathname.split('/').pop();if(collection!=='companies'&&collection!=='contacts')return {error:problem('Not found',404)};const user=await currentUser();if(!user)return {error:problem('Sign in required',401)};if(!env.DB)return {error:problem('Storage unavailable',503)};return {collection,user,db:env.DB};}
+async function context(request:Request){const collection=new URL(request.url).pathname.split('/').pop();if(collection!=='companies'&&collection!=='contacts')return {error:problem('Not found',404)};const user=await currentUser();if(!user)return {error:problem('Sign in required',401)};if(!DB)return {error:problem('Storage unavailable',503)};return {collection,user,db:DB};}
 export async function GET(request:Request){const c=await context(request);if(c.error)return c.error;const {db,user,collection}=c;const r=await db!.prepare(`SELECT * FROM ${collection} WHERE user_id=? ORDER BY updated_at DESC LIMIT 500`).bind(user!.userId).all();return Response.json({items:r.results});}
 export async function POST(request:Request){const c=await context(request);if(c.error)return c.error;const {db,user,collection}=c;const body=await input(request);if(!body)return problem('Invalid request');const parsed=(collection==='companies'?companySchema:contactSchema).safeParse(body);if(!parsed.success)return problem(parsed.error.issues[0].message);const data=parsed.data as Record<string,string|null>;
  if(data.company_id&&!await db!.prepare('SELECT id FROM companies WHERE id=? AND user_id=?').bind(data.company_id,user!.userId).first())return problem('Select a company in your account');
