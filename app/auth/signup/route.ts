@@ -24,8 +24,9 @@ export async function POST(request: Request) {
   });
 
   if (error) {
-    if (error.code?.startsWith("USER_ALREADY_EXISTS")) return back("exists");
-    if (error.code === "PASSWORD_TOO_SHORT" || error.code === "PASSWORD_TOO_LONG") return back("weak");
+    // The SDK reports Supabase-style codes (Better Auth USER_ALREADY_EXISTS → user_already_exists).
+    if (error.code === "user_already_exists" || error.status === 422) return back("exists");
+    if (error.code === "weak_password") return back("weak");
     return back("failed");
   }
 

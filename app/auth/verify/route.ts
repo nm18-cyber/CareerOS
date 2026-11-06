@@ -1,4 +1,4 @@
-import { auth, emailOtp } from "../../../lib/auth/server";
+import { auth, emailOtp, tooManyAttempts } from "../../../lib/auth/server";
 import { authRedirect, formText } from "../../../lib/auth-redirect";
 import { safeReturnPath } from "../../../lib/auth-path";
 
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
 
   const { data, error } = await emailOtp!.verifyEmail({ email, otp });
 
-  if (error) return back({ error: error.code === "TOO_MANY_ATTEMPTS" ? "attempts" : "code" });
+  if (error) return back({ error: tooManyAttempts(error) ? "attempts" : "code" });
 
   // Neon Auth signs the user in after verification; if it didn't, ask them to sign in.
   if (data?.token) return authRedirect(request, returnTo);

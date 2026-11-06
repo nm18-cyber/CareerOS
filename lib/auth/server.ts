@@ -28,3 +28,8 @@ type EmailOtp = {
 };
 
 export const emailOtp = auth ? (auth as unknown as { emailOtp: EmailOtp }).emailOtp : null;
+
+// Better Auth's TOO_MANY_ATTEMPTS has no Supabase-style mapping in the SDK, so match the status/message.
+export function tooManyAttempts(error: { status: number; message: string }) {
+  return error.status === 429 || /too many|attempt/i.test(error.message);
+}

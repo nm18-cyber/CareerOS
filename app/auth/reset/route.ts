@@ -1,4 +1,4 @@
-import { auth, emailOtp } from "../../../lib/auth/server";
+import { auth, emailOtp, tooManyAttempts } from "../../../lib/auth/server";
 import { authRedirect, formText } from "../../../lib/auth-redirect";
 
 export const dynamic = "force-dynamic";
@@ -18,8 +18,8 @@ export async function POST(request: Request) {
   const { error } = await emailOtp!.resetPassword({ email, otp, password });
 
   if (error) {
-    if (error.code === "PASSWORD_TOO_SHORT") return back("weak");
-    if (error.code === "TOO_MANY_ATTEMPTS") return back("attempts");
+    if (error.code === "weak_password") return back("weak");
+    if (tooManyAttempts(error)) return back("attempts");
     return back("code");
   }
 

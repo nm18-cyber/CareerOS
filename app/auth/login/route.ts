@@ -17,11 +17,12 @@ export async function POST(request: Request) {
   const { error } = await auth.signIn.email({ email, password });
 
   if (error) {
-    if (error.code === "EMAIL_NOT_VERIFIED") {
+    // The SDK reports Supabase-style codes (Better Auth EMAIL_NOT_VERIFIED → email_not_confirmed).
+    if (error.code === "email_not_confirmed") {
       await emailOtp!.sendVerificationOtp({ email, type: "email-verification" });
       return authRedirect(request, "/verify-email", { email, return_to: returnTo });
     }
-    if (error.code === "INVALID_EMAIL_OR_PASSWORD" || error.status === 401) return back("invalid");
+    if (error.code === "invalid_credentials" || error.status === 401) return back("invalid");
     return back("failed");
   }
 
